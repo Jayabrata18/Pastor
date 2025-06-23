@@ -1,48 +1,48 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable,  OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import {
     DatabaseConnectionException,
     DatabaseTimeoutException
 } from './exceptions/database.exceptions';
+import privateLogger from 'src/log/logger';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
-    private readonly logger = new Logger(DatabaseService.name);
 
     constructor(@InjectConnection() private readonly connection: Connection) { }
 
     async onModuleInit() {
         await this.setupConnectionEventListeners();
-        this.logger.log('Database service initialized');
+        privateLogger.info('Database service initialized');
     }
 
     async onModuleDestroy() {
         if (this.connection.readyState === 1) {
             await this.connection.close();
-            this.logger.log('Database connection closed');
+            privateLogger.info('Database connection closed');
         }
     }
 
     private async setupConnectionEventListeners() {
         this.connection.on('connected', () => {
-            this.logger.log('Database connected successfully');
+            privateLogger.info('Database connected successfully');
         });
 
         this.connection.on('disconnected', () => {
-            this.logger.warn('Database disconnected');
+            privateLogger.warn('Database disconnected');
         });
 
         this.connection.on('error', (error) => {
-            this.logger.error('Database connection error:', error);
+            privateLogger.error('Database connection error:', error);
         });
 
         this.connection.on('reconnected', () => {
-            this.logger.log('Database reconnected');
+            privateLogger.info('Database reconnected');
         });
 
         this.connection.on('timeout', () => {
-            this.logger.error('Database connection timeout');
+            privateLogger.error('Database connection timeout');
         });
     }
 
@@ -63,12 +63,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     async ping(): Promise<boolean> {
         try {
             if (!this.connection.db) {
+                privateLogger.error('Database connection is not established');
                 throw new Error('Database connection is not established');
             }
             await this.connection.db.admin().ping();
             return true;
         } catch (error) {
-            this.logger.error('Database ping failed:', error);
+            privateLogger.error('Database ping failed:', error);
             return false;
         }
     }
@@ -88,7 +89,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
                 objects: stats.objects,
             };
         } catch (error) {
-            this.logger.error('Failed to get database stats:', error);
+            privateLogger.error('Failed to get database stats:', error);
             throw new DatabaseConnectionException('Unable to retrieve database statistics');
         }
     }
@@ -105,7 +106,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
                 return await operation();
             } catch (error) {
                 lastError = error;
-                this.logger.warn(
+                privateLogger.warn(
                     `Database operation failed (attempt ${attempt}/${maxRetries}):`,
                     error.message,
                 );
