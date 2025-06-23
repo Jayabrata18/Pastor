@@ -573,15 +573,16 @@ export class MediaSyncService {
     }
 
     async deleteAllMediaData(): Promise<void> {
-        this.logger.log('Deleting all media data...');
+        privateLogger.info('Deleting all media data...');
         try {
-            const result = await this.audioMediaModel.deleteMany({});
-            this.logger.log(`Deleted ${result.deletedCount} media records`);
+            const result = await this.videoMediaModel.deleteMany({});
+            privateLogger.warn(`Deleted ${result.deletedCount} media records`);
         } catch (error) {
-            this.logger.error('Error deleting media data:', error);
+            privateLogger.error('Error deleting media data:', error);
             throw error;
         }
     }
+    
 
     async getMediaStats(): Promise<any> {
         const totalCount = await this.videoMediaModel.countDocuments();
