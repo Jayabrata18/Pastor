@@ -2,6 +2,13 @@ import { IsOptional, IsString, IsNumber, MaxLength, IsNotEmpty } from 'class-val
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreateVideoMediaInformationDto {
+
+    @ApiProperty({
+        description: 'External API ID',
+        example: '1434t456'
+    })
+    id: string;
+
     @ApiProperty({
         description: 'Unique media identifier',
         example: 12345

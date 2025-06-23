@@ -9,7 +9,7 @@ export type PodcastMediaInformationDocument = PodcastMediaInformation & Document
 })
 export class PodcastMediaInformation {
     @Prop({ type: Types.ObjectId, auto: true })
-    _id: Types.ObjectId;
+    id: Types.ObjectId;
 
     @Prop({ required: true, unique: true })
     mediaID: number;

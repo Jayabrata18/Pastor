@@ -9,7 +9,7 @@ export type VideoMediaInformationDocument = VideoMediaInformation & Document;
 })
 export class VideoMediaInformation {
     @Prop({ type: Types.ObjectId, auto: true })
-    _id: Types.ObjectId;
+    id: Types.ObjectId;
 
     @Prop({ required: true, unique: true })
     mediaID: number;

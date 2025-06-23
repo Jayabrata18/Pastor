@@ -10,6 +10,7 @@ import { PodcastMediaModule } from './modules/podcast-media/podcast-media.module
 import { ErrorLogModule } from './modules/error-log-info/error-log-info.module';
 import privateLogger from './log/logger';
 import { CategoryInformation } from './entities/categoryInformation.entity';
+import { MediaSyncModule } from './modules/media-sync/media-sync.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CategoryInformation } from './entities/categoryInformation.entity';
     PodcastMediaModule,
     CategoryInformation,
     ErrorLogModule,
+    MediaSyncModule,
 
   ], controllers: [AppController],
   providers: [AppService],

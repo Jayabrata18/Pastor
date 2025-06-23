@@ -9,7 +9,7 @@ export type CategoryInformationDocument = CategoryInformation & Document;
 })
 export class CategoryInformation {
     @Prop({ type: Types.ObjectId, auto: true })
-    _id: Types.ObjectId;
+    id: Types.ObjectId;
 
     @Prop({ required: false })
     mediaID?: number;

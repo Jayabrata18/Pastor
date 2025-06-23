@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
 import privateLogger from './log/logger';
-import config from './config/config'; // Import your centralized config
+import config from './config/config'; 
 
 async function bootstrap() {
   privateLogger.info('---------Backend is starting---------');

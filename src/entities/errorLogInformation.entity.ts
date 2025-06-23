@@ -9,7 +9,7 @@ export type ErrorLogInformationDocument = ErrorLogInformation & Document;
 })
 export class ErrorLogInformation {
     @Prop({ type: Types.ObjectId, auto: true })
-    _id: Types.ObjectId;
+    id: Types.ObjectId;
 
     @Prop({ required: false })
     errorInformation?: string;

@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreateCategoryInformationDto {
     @ApiPropertyOptional({
-        description: 'Associated media ID',
+        description: 'External API ID',
         example: 12345
     })
     @IsOptional()
