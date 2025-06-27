@@ -449,11 +449,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ExternalApiResponse, ExternalMediaItem } from './external-api.interface';
 import { CreateAudioMediaInformationDto } from 'src/dto/AudioMediaInformation.dto';
+import { CreateVideoMediaInformationDto } from 'src/dto/VideoMediaInformation.dto';
+import { CreatePodcastMediaInformationDto } from 'src/dto/PodcastMediaInformation.dto';
 
 @Injectable()
 export class MediaSyncService {
     private readonly logger = new Logger(MediaSyncService.name);
-    private readonly baseUrl = config.CORS_ORIGIN;
+    private readonly videoBaseUrl = config.CORS_ORIGIN + '/videos';
+    private readonly podcastBaseUrl = config.CORS_ORIGIN + '/podcasts';
+    private readonly audioBaseUrl = config.CORS_ORIGIN + '/audio';
 
     constructor(
         private readonly httpService: HttpService,
@@ -469,14 +473,28 @@ export class MediaSyncService {
         private errorLogModel: Model<ErrorLogInformationDocument>,
     ) { }
 
-    async syncMediaData(): Promise<void> {
-        this.logger.log('Starting media sync job...');
+    // Main sync method that syncs all media types
+    async syncAllMediaData(): Promise<void> {
+        this.logger.log('Starting complete media sync job...');
+
+        await Promise.all([
+            this.syncVideoData(),
+            this.syncAudioData(),
+            this.syncPodcastData()
+        ]);
+
+        this.logger.log('Complete media sync job finished');
+    }
+
+    // Video sync method (your original)
+    async syncVideoData(): Promise<void> {
+        this.logger.log('Starting video sync job...');
 
         try {
-            const externalData = await this.fetchExternalData();
+            const externalData = await this.fetchExternalData(this.videoBaseUrl);
 
             if (!externalData || !externalData.data || externalData.data.length === 0) {
-                this.logger.warn('No data received from external API');
+                this.logger.warn('No video data received from external API');
                 return;
             }
 
@@ -486,7 +504,7 @@ export class MediaSyncService {
 
             for (const item of externalData.data) {
                 try {
-                    const result = await this.processMediaItem(item);
+                    const result = await this.processVideoItem(item);
                     if (result === 'updated') {
                         updatedCount++;
                     } else if (result === 'inserted') {
@@ -494,36 +512,152 @@ export class MediaSyncService {
                     }
                     processedCount++;
                 } catch (error) {
-                    this.logger.error(`Error processing item ${item.id}:`, error);
+                    this.logger.error(`Error processing video item ${item.id}:`, error);
                 }
             }
 
-            this.logger.log(`Media sync completed. Processed: ${processedCount}, Updated: ${updatedCount}, Inserted: ${insertedCount}`);
+            this.logger.log(`Video sync completed. Processed: ${processedCount}, Updated: ${updatedCount}, Inserted: ${insertedCount}`);
         } catch (error) {
-            this.logger.error('Error during media sync:', error);
+            this.logger.error('Error during video sync:', error);
         }
     }
 
-    private async fetchExternalData(): Promise<ExternalApiResponse> {
+    // Audio sync method
+    async syncAudioData(): Promise<void> {
+        this.logger.log('Starting audio sync job...');
+
+        try {
+            const externalData = await this.fetchExternalData(this.audioBaseUrl);
+
+            if (!externalData || !externalData.data || externalData.data.length === 0) {
+                this.logger.warn('No audio data received from external API');
+                return;
+            }
+
+            let processedCount = 0;
+            let updatedCount = 0;
+            let insertedCount = 0;
+
+            for (const item of externalData.data) {
+                try {
+                    const result = await this.processAudioItem(item);
+                    if (result === 'updated') {
+                        updatedCount++;
+                    } else if (result === 'inserted') {
+                        insertedCount++;
+                    }
+                    processedCount++;
+                } catch (error) {
+                    this.logger.error(`Error processing audio item ${item.id}:`, error);
+                }
+            }
+
+            this.logger.log(`Audio sync completed. Processed: ${processedCount}, Updated: ${updatedCount}, Inserted: ${insertedCount}`);
+        } catch (error) {
+            this.logger.error('Error during audio sync:', error);
+        }
+    }
+
+    // Podcast sync method
+    async syncPodcastData(): Promise<void> {
+        this.logger.log('Starting podcast sync job...');
+
+        try {
+            const externalData = await this.fetchExternalData(this.podcastBaseUrl);
+
+            if (!externalData || !externalData.data || externalData.data.length === 0) {
+                this.logger.warn('No podcast data received from external API');
+                return;
+            }
+
+            let processedCount = 0;
+            let updatedCount = 0;
+            let insertedCount = 0;
+
+            for (const item of externalData.data) {
+                try {
+                    const result = await this.processPodcastItem(item);
+                    if (result === 'updated') {
+                        updatedCount++;
+                    } else if (result === 'inserted') {
+                        insertedCount++;
+                    }
+                    processedCount++;
+                } catch (error) {
+                    this.logger.error(`Error processing podcast item ${item.id}:`, error);
+                }
+            }
+
+            this.logger.log(`Podcast sync completed. Processed: ${processedCount}, Updated: ${updatedCount}, Inserted: ${insertedCount}`);
+        } catch (error) {
+            this.logger.error('Error during podcast sync:', error);
+        }
+    }
+
+    // Updated fetch method to accept URL parameter
+    private async fetchExternalData(url: string): Promise<ExternalApiResponse> {
         try {
             const response = await firstValueFrom(
-                this.httpService.get<ExternalApiResponse>(this.baseUrl)
+                this.httpService.get<ExternalApiResponse>(url)
             );
 
             return response.data;
         } catch (error) {
-            this.logger.error('Failed to fetch external data:', error);
+            this.logger.error(`Failed to fetch external data from ${url}:`, error);
             throw error;
         }
     }
+    // private async processMediaItem(item: ExternalMediaItem): Promise<'updated' | 'inserted'> {
+    //     // Check if media already exists by mediaLink
+    //     const existingMedia = await this.videoMediaModel.findOne({
+    //         where: { mediaLink: item.link }
+    //     });
 
-    private async processMediaItem(item: ExternalMediaItem): Promise<'updated' | 'inserted'> {
+    //     const mediaData: CreateAudioMediaInformationDto = {
+    //         id: item.id,
+    //         mediaID: parseInt(item.id),
+    //         title: item.title,
+    //         description: item.description,
+    //         mediaImage: item.image,
+    //         mediaLink: item.link,
+    //         author: item.author,
+    //         // categories: item.categories,
+    //         language: item.language,
+    //         // explicit: item.explicit,
+    //         // mediaType: this.determineMediaType(item),
+    //     };
+
+    //     if (existingMedia) {
+    //         // Update existing record
+    //         await this.videoMediaModel.updateOne(
+    //             { _id: existingMedia._id },
+    //             {
+    //                 ...mediaData,
+    //                 updatedAt: new Date()
+    //             }
+    //         );
+    //         this.logger.debug(`Updated existing media: ${item.title}`);
+    //         return 'updated';
+    //     } else {
+    //         // Insert new record
+    //         const newMedia = new this.videoMediaModel({
+    //             ...mediaData,
+    //             createdAt: new Date(),
+    //             updatedAt: new Date()
+    //         });
+    //         await newMedia.save();
+    //         this.logger.debug(`Inserted new media: ${item.title}`);
+    //         return 'inserted';
+    //     }
+    // }
+    // Video processing (updated from your original)
+    private async processVideoItem(item: ExternalMediaItem): Promise<'updated' | 'inserted'> {
         // Check if media already exists by mediaLink
         const existingMedia = await this.videoMediaModel.findOne({
             where: { mediaLink: item.link }
         });
 
-        const mediaData: CreateAudioMediaInformationDto = {
+        const mediaData: CreateVideoMediaInformationDto = {
             id: item.id,
             mediaID: parseInt(item.id),
             title: item.title,
@@ -531,10 +665,7 @@ export class MediaSyncService {
             mediaImage: item.image,
             mediaLink: item.link,
             author: item.author,
-            // categories: item.categories,
             language: item.language,
-            // explicit: item.explicit,
-            // mediaType: this.determineMediaType(item),
         };
 
         if (existingMedia) {
@@ -546,7 +677,7 @@ export class MediaSyncService {
                     updatedAt: new Date()
                 }
             );
-            this.logger.debug(`Updated existing media: ${item.title}`);
+            this.logger.debug(`Updated existing video: ${item.title}`);
             return 'updated';
         } else {
             // Insert new record
@@ -556,33 +687,156 @@ export class MediaSyncService {
                 updatedAt: new Date()
             });
             await newMedia.save();
-            this.logger.debug(`Inserted new media: ${item.title}`);
+            this.logger.debug(`Inserted new video: ${item.title}`);
             return 'inserted';
         }
     }
 
-    private determineMediaType(item: ExternalMediaItem): string {
-        // Determine media type based on categories or other criteria
-        if (item.categories.some(cat => cat.toLowerCase().includes('podcast'))) {
-            return 'podcast';
-        } else if (item.categories.some(cat => cat.toLowerCase().includes('video'))) {
-            return 'video';
+    // Audio processing
+    private async processAudioItem(item: ExternalMediaItem): Promise<'updated' | 'inserted'> {
+        // Check if media already exists by mediaLink
+        const existingMedia = await this.audioMediaModel.findOne({
+            where: { mediaLink: item.link }
+        });
+
+        const mediaData: CreateAudioMediaInformationDto = {
+            id: item.id,
+            mediaID: parseInt(item.id),
+            title: item.title,
+            description: item.description,
+            mediaImage: item.image,
+            mediaLink: item.link,
+            author: item.author,
+            language: item.language,
+        };
+
+        if (existingMedia) {
+            // Update existing record
+            await this.audioMediaModel.updateOne(
+                { _id: existingMedia._id },
+                {
+                    ...mediaData,
+                    updatedAt: new Date()
+                }
+            );
+            this.logger.debug(`Updated existing audio: ${item.title}`);
+            return 'updated';
         } else {
-            return 'audio';
+            // Insert new record
+            const newMedia = new this.audioMediaModel({
+                ...mediaData,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+            await newMedia.save();
+            this.logger.debug(`Inserted new audio: ${item.title}`);
+            return 'inserted';
         }
     }
 
+    // Podcast processing
+    private async processPodcastItem(item: ExternalMediaItem): Promise<'updated' | 'inserted'> {
+        // Check if media already exists by mediaLink
+        const existingMedia = await this.podcastMediaModel.findOne({
+            where: { mediaLink: item.link }
+        });
+
+        const mediaData: CreatePodcastMediaInformationDto = {
+            id: item.id,
+            mediaID: parseInt(item.id),
+            title: item.title,
+            description: item.description,
+            mediaImage: item.image,
+            mediaLink: item.link,
+            author: item.author,
+            language: item.language,
+        };
+
+        if (existingMedia) {
+            // Update existing record
+            await this.podcastMediaModel.updateOne(
+                { _id: existingMedia._id },
+                {
+                    ...mediaData,
+                    updatedAt: new Date()
+                }
+            );
+            this.logger.debug(`Updated existing podcast: ${item.title}`);
+            return 'updated';
+        } else {
+            // Insert new record
+            const newMedia = new this.podcastMediaModel({
+                ...mediaData,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+            await newMedia.save();
+            this.logger.debug(`Inserted new podcast: ${item.title}`);
+            return 'inserted';
+        }
+    }
+
+
+    // Delete all media data from all collections
     async deleteAllMediaData(): Promise<void> {
-        privateLogger.info('Deleting all media data...');
+        this.logger.log('Starting deletion of all media data...');
+
         try {
-            const result = await this.videoMediaModel.deleteMany({});
-            privateLogger.warn(`Deleted ${result.deletedCount} media records`);
+            const [videoResult, audioResult, podcastResult] = await Promise.all([
+                this.videoMediaModel.deleteMany({}),
+                this.audioMediaModel.deleteMany({}),
+                this.podcastMediaModel.deleteMany({})
+            ]);
+
+            this.logger.log(`All media data deleted successfully:`);
+            this.logger.log(`- Videos deleted: ${videoResult.deletedCount}`);
+            this.logger.log(`- Audio deleted: ${audioResult.deletedCount}`);
+            this.logger.log(`- Podcasts deleted: ${podcastResult.deletedCount}`);
+            this.logger.log(`Total records deleted: ${videoResult.deletedCount + audioResult.deletedCount + podcastResult.deletedCount}`);
         } catch (error) {
-            privateLogger.error('Error deleting media data:', error);
+            this.logger.error('Error during media data deletion:', error);
             throw error;
         }
     }
-    
+
+    // Delete all video data
+    async deleteAllVideoData(): Promise<void> {
+        this.logger.log('Deleting all video data...');
+
+        try {
+            const result = await this.videoMediaModel.deleteMany({});
+            this.logger.log(`All video data deleted. Records deleted: ${result.deletedCount}`);
+        } catch (error) {
+            this.logger.error('Error during video data deletion:', error);
+            throw error;
+        }
+    }
+
+    // Delete all audio data
+    async deleteAllAudioData(): Promise<void> {
+        this.logger.log('Deleting all audio data...');
+
+        try {
+            const result = await this.audioMediaModel.deleteMany({});
+            this.logger.log(`All audio data deleted. Records deleted: ${result.deletedCount}`);
+        } catch (error) {
+            this.logger.error('Error during audio data deletion:', error);
+            throw error;
+        }
+    }
+
+    // Delete all podcast data
+    async deleteAllPodcastData(): Promise<void> {
+        this.logger.log('Deleting all podcast data...');
+
+        try {
+            const result = await this.podcastMediaModel.deleteMany({});
+            this.logger.log(`All podcast data deleted. Records deleted: ${result.deletedCount}`);
+        } catch (error) {
+            this.logger.error('Error during podcast data deletion:', error);
+            throw error;
+        }
+    }    
 
     async getMediaStats(): Promise<any> {
         const totalCount = await this.videoMediaModel.countDocuments();

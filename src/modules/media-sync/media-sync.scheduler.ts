@@ -13,14 +13,14 @@ export class MediaSyncScheduler {
     @Cron(CronExpression.EVERY_HOUR)
     async handleHourlySync(): Promise<void> {
         this.logger.log('Running hourly media sync...');
-        await this.mediaSyncService.syncMediaData();
+        await this.mediaSyncService.syncAllMediaData();
     }
     // Run every 1 minutes
     @Cron('*/1 * * * *')
     async handleFrequentSync(): Promise<void> {
         this.logger.log('Running media sync every 1 minutes...');
         privateLogger.info('Running media sync every 1 minutes...');
-        await this.mediaSyncService.syncMediaData();
+        await this.mediaSyncService.syncAllMediaData();
     }
 
     // Alternative: Run every hour at minute 0
