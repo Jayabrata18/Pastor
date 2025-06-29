@@ -9,10 +9,10 @@ import {
 import { Response } from 'express';
 import { MongoError } from 'mongodb';
 import { Error as MongooseError } from 'mongoose';
+import privateLogger from 'src/log/logger';
 
 @Catch()
 export class DatabaseExceptionFilter implements ExceptionFilter {
-    private readonly logger = new Logger(DatabaseExceptionFilter.name);
 
     catch(exception: any, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
@@ -25,7 +25,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
         let details: any = null;
 
         // Log the exception
-        this.logger.error(
+        privateLogger.error(
             `Database Exception: ${exception.message}`,
             exception.stack,
             {
@@ -33,6 +33,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
                 method: request.method,
                 timestamp: new Date().toISOString(),
             },
+            { context: 'DatabaseExceptionFilter' }
         );
 
         if (exception instanceof HttpException) {

@@ -77,6 +77,9 @@ export class CreateVideoMediaInformationDto {
     @MaxLength(50)
     language?: string;
 
+    @ApiProperty()
+    categories?: string[];
+
     @ApiPropertyOptional({
         description: 'User who created this record',
         example: 'admin',

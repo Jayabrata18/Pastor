@@ -5,21 +5,19 @@ import privateLogger from 'src/log/logger';
 
 @Injectable()
 export class MediaSyncScheduler {
-    private readonly logger = new Logger(MediaSyncScheduler.name);
 
     constructor(private readonly mediaSyncService: MediaSyncService) { }
 
     // Run every hour
     @Cron(CronExpression.EVERY_HOUR)
     async handleHourlySync(): Promise<void> {
-        this.logger.log('Running hourly media sync...');
+        privateLogger.info('Running hourly media sync...', { context: 'handleHourlySync' });
         await this.mediaSyncService.syncAllMediaData();
     }
     // Run every 1 minutes
     @Cron('*/1 * * * *')
     async handleFrequentSync(): Promise<void> {
-        this.logger.log('Running media sync every 1 minutes...');
-        privateLogger.info('Running media sync every 1 minutes...');
+        privateLogger.info('Running media sync every 1 minutes...', { context: 'handleFrequentSync' });
         await this.mediaSyncService.syncAllMediaData();
     }
 
@@ -33,7 +31,7 @@ export class MediaSyncScheduler {
     // You can also add other schedules like daily cleanup
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async handleDailyCleanup(): Promise<void> {
-        this.logger.log('Running daily maintenance...');
+        privateLogger.info('Running daily maintenance...', { context: 'handleDailyCleanup' });
         // Add any daily maintenance tasks here
     }
 }

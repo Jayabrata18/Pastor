@@ -14,35 +14,35 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleInit() {
         await this.setupConnectionEventListeners();
-        privateLogger.info('Database service initialized');
+        privateLogger.info('Database service initialized', { context: 'DatabaseService' });
     }
 
     async onModuleDestroy() {
         if (this.connection.readyState === 1) {
             await this.connection.close();
-            privateLogger.info('Database connection closed');
+            privateLogger.info('Database connection closed', { context: 'DatabaseService' });
         }
     }
 
     private async setupConnectionEventListeners() {
         this.connection.on('connected', () => {
-            privateLogger.info('Database connected successfully');
+            privateLogger.info('Database connected successfully', { context: 'DatabaseService' });
         });
 
         this.connection.on('disconnected', () => {
-            privateLogger.warn('Database disconnected');
+            privateLogger.warn('Database disconnected', { context: 'DatabaseService' });
         });
 
         this.connection.on('error', (error) => {
-            privateLogger.error('Database connection error:', error);
+            privateLogger.error('Database connection error:', error, { context: 'DatabaseService' });
         });
 
         this.connection.on('reconnected', () => {
-            privateLogger.info('Database reconnected');
+            privateLogger.info('Database reconnected', { context: 'DatabaseService' });
         });
 
         this.connection.on('timeout', () => {
-            privateLogger.error('Database connection timeout');
+            privateLogger.error('Database connection timeout', { context: 'DatabaseService' });
         });
     }
 
@@ -63,13 +63,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     async ping(): Promise<boolean> {
         try {
             if (!this.connection.db) {
-                privateLogger.error('Database connection is not established');
+                privateLogger.error('Database connection is not established', { context: 'DatabaseService.ping' });
                 throw new Error('Database connection is not established');
             }
             await this.connection.db.admin().ping();
             return true;
         } catch (error) {
-            privateLogger.error('Database ping failed:', error);
+            privateLogger.error('Database ping failed:', error, { context: 'DatabaseService.ping' });
             return false;
         }
     }
@@ -89,7 +89,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
                 objects: stats.objects,
             };
         } catch (error) {
-            privateLogger.error('Failed to get database stats:', error);
+            privateLogger.error('Failed to get database stats:', error, { context: 'DatabaseService.getDatabaseStats' });
             throw new DatabaseConnectionException('Unable to retrieve database statistics');
         }
     }

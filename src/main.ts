@@ -5,10 +5,11 @@ import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
-import privateLogger from './log/logger';
+import privateLogger, { createContextualLogger } from './log/logger';
 import config from './config/config'; 
 
 async function bootstrap() {
+  const privateLogger = createContextualLogger('Bootstrap');
   privateLogger.info('---------Backend is starting---------');
 
   const app = await NestFactory.create(AppModule, {
@@ -73,6 +74,13 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
+  // app.enableVersioning({
+  //   type: VersioningType.HEADER,
+  //   header: 'Accept-Version',
+  //   defaultVersion: '1',
+  // });  
+
+
 
   // Swagger documentation (only in non-production environments)
   if (config.ENV !== 'production') {
@@ -115,23 +123,23 @@ async function bootstrap() {
       environment: config.ENV,
       version: config.npm_package_version,
     });
+    privateLogger.info('Health check endpoint hit', {
+      meta: { status: 'ok' }
+    });
   });
 
   // Graceful shutdown handlers
   const gracefulShutdown = (signal: string) => {
     privateLogger.info(`Received ${signal}. Starting graceful shutdown...`, {
-      context: 'Bootstrap',
       meta: { signal }
     });
 
     app.close().then(() => {
       privateLogger.info('Application closed successfully', {
-        context: 'Bootstrap'
       });
       process.exit(0);
     }).catch((error) => {
       privateLogger.error('Error during graceful shutdown', {
-        context: 'Bootstrap',
         meta: { error: error.message },
         trace: error.stack
       });
@@ -146,7 +154,6 @@ async function bootstrap() {
   // Handle uncaught exceptions and unhandled rejections
   process.on('uncaughtException', (error) => {
     privateLogger.error('Uncaught Exception', {
-      context: 'Bootstrap',
       meta: { error: error.message },
       trace: error.stack
     });
@@ -155,7 +162,6 @@ async function bootstrap() {
 
   process.on('unhandledRejection', (reason, promise) => {
     privateLogger.error('Unhandled Rejection', {
-      context: 'Bootstrap',
       meta: { reason, promise }
     });
     process.exit(1);
@@ -168,11 +174,9 @@ async function bootstrap() {
 
   // Database connection logging
   privateLogger.info('Database connection established successfully', {
-    context: 'Bootstrap',
     meta: { uri: config.DATABASE_URL }
   });
   privateLogger.info(`🚀 Application is running on: http://${host}:${port}`, {
-    context: 'Bootstrap',
     meta: {
       port,
       host,
@@ -183,19 +187,14 @@ async function bootstrap() {
   });
 
   if (config.ENV !== 'production') {
-    privateLogger.info(`📚 Swagger documentation available at: http://${host}:${port}/api/docs`, {
-      context: 'Bootstrap'
-    });
+    privateLogger.info(`📚 Swagger documentation available at: http://${host}:${port}/api/docs`);
   }
 
-  privateLogger.info(`💚 Health check available at: http://${host}:${port}/health`, {
-    context: 'Bootstrap'
-  });
+  privateLogger.info(`💚 Health check available at: http://${host}:${port}/health`,  );
 }
 
 bootstrap().catch((error) => {
   privateLogger.error('Failed to start application', {
-    context: 'Bootstrap',
     meta: { error: error.message },
     trace: error.stack
   });

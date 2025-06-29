@@ -14,21 +14,11 @@ export class MediaSyncController {
     @ApiResponse({ status: 200, description: 'Sync completed successfully' })
     async syncMedia(): Promise<{ message: string }> {
         await this.mediaSyncService.syncAllMediaData();
+        privateLogger.info('Media sync completed successfully', { context: 'MediaSyncController.syncMedia' });
         return { message: 'Media sync completed successfully' };
     }
 
-    // @Delete('content')
-    // @HttpCode(HttpStatus.OK)
-    // @ApiOperation({ summary: 'Delete all media content from database' })
-    // @ApiResponse({ status: 200, description: 'All media content deleted successfully' })
-    // async deleteAllMediaContent(): Promise<{ message: string }> {
-    //     const result = await this.mediaSyncService.deleteAllMediaData();
-    //     privateLogger.info(`All media content deleted successfully: ${result.deletedCount} items removed`);
-    //     if (result.deletedCount === 0) {
-    //         return { message: 'No media content found to delete' };
-    //     }
-    //     return { message: `All media content deleted successfully: ${result.deletedCount} items removed` };
-    // }
+
 
     @Delete('delete/all')
     @HttpCode(HttpStatus.OK)
@@ -36,7 +26,7 @@ export class MediaSyncController {
     @ApiResponse({ status: 200, description: 'All media data deleted successfully' })
     @ApiResponse({ status: 500, description: 'Internal server error during deletion' })
     async deleteAllMediaData() {
-        privateLogger.info('Received request to delete all media data');
+        privateLogger.info('Received request to delete all media data',{context: 'MediaSyncController.deleteAllMediaData'});
 
         try {
             await this.mediaSyncService.deleteAllMediaData();
@@ -46,7 +36,7 @@ export class MediaSyncController {
                 timestamp: new Date().toISOString()
             };
         } catch (error) {
-            privateLogger.error('Error deleting all media data:', error);
+            privateLogger.error('Error deleting all media data:', error, {context: 'MediaSyncController.deleteAllMediaData'});
             throw error;
         }
     }    

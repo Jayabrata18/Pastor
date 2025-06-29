@@ -35,6 +35,10 @@ export class VideoMediaInformation {
     @Prop({ required: false, maxlength: 50 })
     language?: string;
 
+    @Prop({ required: false })
+    categories?: string[];
+
+
     @Prop({ required: false, maxlength: 50 })
     createdBy?: string;
 

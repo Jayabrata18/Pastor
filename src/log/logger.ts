@@ -181,4 +181,16 @@ export const loggerConfig = WinstonModule.createLogger({
     instance: privateLogger,
 });
 
+// Helper function to create contextual logger
+export const createContextualLogger = (context: string) => {
+    return {
+        info: (message: string, meta?: any) => privateLogger.info(message, { context, ...meta }),
+        warn: (message: string, meta?: any) => privateLogger.warn(message, { context, ...meta }),
+        error: (message: string, meta?: any) => privateLogger.error(message, { context, ...meta }),
+        debug: (message: string, meta?: any) => privateLogger.debug(message, { context, ...meta }),
+        verbose: (message: string, meta?: any) => privateLogger.verbose(message, { context, ...meta }),
+    };
+};
+
+
 export default privateLogger;
